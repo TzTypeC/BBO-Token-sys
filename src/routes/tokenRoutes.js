@@ -13,6 +13,9 @@ const { generateTokenHandler } = require('../controllers/tokenController'); // P
 // });
 
 router.post('/generate-token', generateTokenHandler);
+router.get('/test', (req, res) => {
+  res.json({ message: 'API is alive 💀🔥' });
+});
 // router.get('/validate-token/token?', validateTokenHandler);
 
 module.exports = router;
