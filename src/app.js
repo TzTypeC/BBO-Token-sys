@@ -14,6 +14,12 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 const tokenRoutes = require('./routes/tokenRoutes');
 app.use('/api/token', tokenRoutes);
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: 'API is alive bro💀🔥', 
+    letsgoo: "go ahead, just use the API! 🔥🔥🔥"
+});
+});
 
 app.listen(port, () => {
     console.log(`Example app running on http://localhost:${port}`);
