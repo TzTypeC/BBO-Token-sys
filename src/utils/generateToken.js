@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const checkTokenExists = require('../utils/checkTokenExists');
+const { checkTokenExists }= require('./checkToken');
 const { hash } = require('../controllers/cryptography');
 
 const generateToken = async () => {

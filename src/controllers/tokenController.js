@@ -1,16 +1,18 @@
 const generateToken = require('../utils/generateToken');
 const { setResponse, response, errorResponse } = require('../utils/response');
-const checkTokenExists = require('../utils/checkTokenExists');
+const { checkTokenExists } = require('../utils/checkToken');
 const storeToken = require('../utils/storeToken');
+const validateToken = require('../utils/validateToken');
 const { hash, encrypt } = require('./cryptography');
 
 const generateTokenHandler = async (req, res) => {
     try {
         setResponse(res);
 
-        const { client, customToken } = req.body;
+        const { client, customToken, timeToExpiredRaw } = req.body;
         let token, hashedToken;
         let errors = {};
+        const timeToExpired = timeToExpiredRaw.trim();
 
         // Validasi client (tidak boleh kosong)
         if (!client || client.trim() === "") {
@@ -43,17 +45,21 @@ const generateTokenHandler = async (req, res) => {
         if (!token) {
             ({ token, hashedToken } = await generateToken());
         }
+        
+        const now = new Date();
+        const unFormattedExpiredDate = new Date(now.getTime() + timeToExpired * 24 * 60 * 60 * 1000);
+        const formatted = unFormattedExpiredDate.toISOString().split("T")[0];
+        const expiredDate = formatted;
+        // const formattedDate = `${unFormattedExpiredDate.getDate().toString().padStart(2, "0")}-${(unFormattedExpiredDate.getMonth() + 1).toString().padStart(2, "0")}-${unFormattedExpiredDate.getFullYear()}`;
 
         const { encrypted, iv } = encrypt(token);
-        const { success, message } = await storeToken(hashedToken, encrypted, iv, client);
+        const { success, message } = await storeToken(hashedToken, encrypted, iv, client, expiredDate);
 
-        const expiredDate = new Date(Date.now() + 60 * 60 * 24 * 6 * 1000);
-        const formattedDate = `${expiredDate.getDate().toString().padStart(2, "0")}-${(expiredDate.getMonth() + 1).toString().padStart(2, "0")}-${expiredDate.getFullYear()}`;
 
         const payload = {
             token,
             client_name: client,
-            expired: formattedDate,
+            expired: expiredDate,
         };
 
         return success ? response(201, message, payload) : response(500, message, payload);
@@ -64,4 +70,47 @@ const generateTokenHandler = async (req, res) => {
     }
 };
 
-module.exports = { generateTokenHandler };
+const validateTokenHandler = async (req, res) => {
+    try {
+        setResponse(res);
+
+        const rawDeviceId = req.query.deviceId;
+        const rawTokenId = req.query.tokenId;
+        let errors = {};
+
+        if (!rawDeviceId || rawDeviceId.trim() === "") {
+            errors.device = ["Kesalahan Pembacaan Device"];
+        }
+
+        if (!rawTokenId || rawTokenId.trim() === "") {
+            errors.token = ["Token tidak boleh kosong."];
+        }
+
+        if (Object.keys(errors).length > 0) {
+            return errorResponse(400, "Validasi gagal.", errors);
+        }
+
+        const deviceId = rawDeviceId.trim();
+        const token = rawTokenId.trim();
+        const hashedToken = hash(token);
+
+        const result = await validateToken(hashedToken, deviceId);
+        const { statusCode, success, message } = result;
+        // console.log(result);
+
+        if(success){
+            payload = result.payload;
+            payload.token = token
+            return response(statusCode , message,payload);
+        } else {
+            errors = result.errors;
+            return errorResponse(statusCode, message, errors);
+        }
+
+    } catch (error) {
+        console.error(error);
+        return errorResponse(500, "Terjadi kesalahan server.", { error: [error.message] });
+    }
+};
+
+module.exports = { generateTokenHandler, validateTokenHandler };
