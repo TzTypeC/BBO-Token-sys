@@ -65,7 +65,8 @@ const checkClientInfo = async (tokenId, deviceId) => {
 
         const { deviceIdFromDB, expiredDateFromDB, lastLoggedFromDB, clientFromDB  } = result;
         const currentTimeLogin = getFormattedNow();
-        const formattedLastLogged = formatDateToSQL(lastLoggedFromDB)
+        const formattedLastLogged = lastLoggedFromDB ? formatDateToSQL(lastLoggedFromDB) : null;
+
 
         if (isTokenExpired(expiredDateFromDB)) {
             await connection.rollback();
