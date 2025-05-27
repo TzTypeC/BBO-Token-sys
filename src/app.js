@@ -17,7 +17,8 @@ app.use('/api/token', tokenRoutes);
 app.get('/test', (req, res) => {
   res.json({ 
     message: 'API is alive bro💀🔥', 
-    letsgoo: "go ahead, just use the API! 🔥🔥🔥"
+    letsgoo: "go ahead, just use the API! 🔥🔥🔥",
+    isUpdated: "false"
 });
 });
 
