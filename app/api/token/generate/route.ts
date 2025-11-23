@@ -40,7 +40,7 @@ export async function POST(request: Request): Promise<Response> {
     const { custom_token, expirate_date, username } = body;
 
     if (!username || typeof username !== 'string') {
-      return new Response(JSON.stringify({ error: 'username is required' }), {
+      return new Response(JSON.stringify({ valid: false, message: 'username is required', code: '400' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -48,7 +48,7 @@ export async function POST(request: Request): Promise<Response> {
 
     const user = await prisma.user.findFirst({ where: { name: username } });
     if (!user) {
-      return new Response(JSON.stringify({ error: 'user not found' }), {
+      return new Response(JSON.stringify({ valid: false, message: 'user not found', code: '404' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -57,7 +57,7 @@ export async function POST(request: Request): Promise<Response> {
     let expiresAt: Date | null = null;
     if (expirate_date && typeof expirate_date === 'string' && expirate_date.toLowerCase() !== 'never') {
       const parsed = parseDateDDMMYYYY(expirate_date);
-      if (!parsed) return new Response(JSON.stringify({ error: 'invalid expirate_date' }), {
+      if (!parsed) return new Response(JSON.stringify({ valid: false, message: 'invalid expirate_date', code: '400' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -74,13 +74,15 @@ export async function POST(request: Request): Promise<Response> {
       },
     });
 
-    return new Response(JSON.stringify({ token: token.value, expiresAt: token.expiresAt }), {
+    return new Response(JSON.stringify({ valid: true, message: 'token generated successfully', code: '201', data: { token: token.value, expiresAt: token.expiresAt } }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: String(err instanceof Error ? err.message : err) }), {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const code = errorMessage.includes('already exists') ? '409' : '400';
+    return new Response(JSON.stringify({ valid: false, message: errorMessage, code }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });

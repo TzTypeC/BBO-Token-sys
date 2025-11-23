@@ -6,20 +6,20 @@ export async function GET(request: Request): Promise<Response> {
     const tokenValue = url.searchParams.get('token');
     const deviceId = url.searchParams.get('deviceId');
 
-    if (!tokenValue) return new Response(JSON.stringify({ valid: false, reason: 'missing token' }), {
+    if (!tokenValue) return new Response(JSON.stringify({ valid: false, message: 'missing token', code: '400' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
 
     const token = await prisma.token.findUnique({ where: { value: tokenValue } });
-    if (!token) return new Response(JSON.stringify({ valid: false, reason: 'not found' }), {
+    if (!token) return new Response(JSON.stringify({ valid: false, message: 'token not found', code: '404' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
 
     // check expiry
     if (token.expiresAt && new Date() > token.expiresAt) {
-      return new Response(JSON.stringify({ valid: false, reason: 'expired' }), {
+      return new Response(JSON.stringify({ valid: false, message: 'token expired', code: '401' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -35,7 +35,7 @@ export async function GET(request: Request): Promise<Response> {
           where: { value: tokenValue },
           data: { deviceId, lastUsed: now },
         });
-        return new Response(JSON.stringify({ valid: true, token: updatedToken.value, userId: updatedToken.userId, expiresAt: updatedToken.expiresAt }), {
+        return new Response(JSON.stringify({ valid: true, message: 'token is valid', code: '200', data: { token: updatedToken.value, userId: updatedToken.userId, expiresAt: updatedToken.expiresAt } }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
@@ -43,7 +43,7 @@ export async function GET(request: Request): Promise<Response> {
       
       // If token already has a deviceId and it's different, return conflict
       if (token.deviceId !== deviceId) {
-        return new Response(JSON.stringify({ valid: false, message: 'Token ini sudah di gunakan di perangkat lain', code: 409 }), {
+        return new Response(JSON.stringify({ valid: false, message: 'Token ini sudah di gunakan di perangkat lain', code: '409' }), {
           status: 409,
           headers: { 'Content-Type': 'application/json' },
         });
@@ -54,7 +54,7 @@ export async function GET(request: Request): Promise<Response> {
         where: { value: tokenValue },
         data: { lastUsed: now },
       });
-      return new Response(JSON.stringify({ valid: true, token: updatedToken.value, userId: updatedToken.userId, expiresAt: updatedToken.expiresAt }), {
+      return new Response(JSON.stringify({ valid: true, message: 'token is valid', code: '200', data: { token: updatedToken.value, userId: updatedToken.userId, expiresAt: updatedToken.expiresAt } }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -65,13 +65,13 @@ export async function GET(request: Request): Promise<Response> {
       where: { value: tokenValue },
       data: { lastUsed: now },
     });
-    return new Response(JSON.stringify({ valid: true, token: updatedToken.value, userId: updatedToken.userId, expiresAt: updatedToken.expiresAt }), {
+    return new Response(JSON.stringify({ valid: true, message: 'token is valid', code: '200', data: { token: updatedToken.value, userId: updatedToken.userId, expiresAt: updatedToken.expiresAt } }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ valid: false, error: String(err instanceof Error ? err.message : err) }), {
+    return new Response(JSON.stringify({ valid: false, message: String(err instanceof Error ? err.message : err), code: '500' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
