@@ -39,6 +39,8 @@ npx prisma migrate deploy
    - Go to Project Settings → Environment Variables
    - Add: `DATABASE_URL` with your PostgreSQL connection string
      - Format: `postgresql://user:password@host:port/database?sslmode=require`
+   - Add: `VERSION` with your application version (e.g., `1.0.0`)
+     - This is used by `/api/isUpdate` endpoint to check if clients need updates
    - Make sure to add it for all environments (Production, Preview, Development)
 
 6. Click **Deploy**
@@ -74,6 +76,7 @@ After deployment, test your API endpoints:
 - `https://your-project.vercel.app/api/user/create` (POST)
 - `https://your-project.vercel.app/api/token/generate` (POST)
 - `https://your-project.vercel.app/api/token/validate` (GET)
+- `https://your-project.vercel.app/api/isUpdate?Version=1.0.0` (GET)
 
 ## Important Notes
 
@@ -84,7 +87,9 @@ After deployment, test your API endpoints:
    - Run migrations manually: `npx prisma migrate deploy`
    - Use a migration service
 
-3. **Environment Variables**: Make sure `DATABASE_URL` is set in Vercel's environment variables for all environments.
+3. **Environment Variables**: Make sure `DATABASE_URL` and `VERSION` are set in Vercel's environment variables for all environments.
+   - `DATABASE_URL`: PostgreSQL connection string
+   - `VERSION`: Application version (e.g., `1.0.0`) - used by the update check endpoint
 
 4. **Build Time**: The first build may take longer as it generates the Prisma client.
 
